@@ -18,14 +18,14 @@ SELECT
     tout.total_int,
     GREATEST(tin.total_in, tout.total_out) AS total_max
 FROM 
-    locations_12 l 
+    locations l 
 LEFT JOIN (
   SELECT
       origin,
       SUM(CASE WHEN origin <> dest THEN count ELSE 0 END) AS total_out,
       SUM(CASE WHEN origin = dest THEN count ELSE 0 END) AS total_int
   FROM
-      flows_12 f
+      flows f
   WHERE 
     (TRUE AND (origin IN ('72006') OR dest IN ('72006')) AND TRUE)
   GROUP BY
@@ -37,7 +37,7 @@ LEFT JOIN (
       dest,
       SUM(CASE WHEN origin <> dest THEN count ELSE 0 END) AS total_in
   FROM
-      flows_12 f
+      flows f
   WHERE 
     (TRUE AND (origin IN ('72006') OR dest IN ('72006')) AND TRUE)
   GROUP BY
@@ -87,9 +87,9 @@ const Home: NextPage = () => {
       });
       const conn = await db.connect();
 
-      await conn.query(`CREATE TABLE flows_12 AS SELECT * FROM '${FLOWS_URL}'`);
+      await conn.query(`CREATE TABLE flows AS SELECT * FROM '${FLOWS_URL}'`);
       await conn.query(
-        `CREATE TABLE locations_12 AS SELECT * FROM '${LOCATIONS_URL}'`
+        `CREATE TABLE locations AS SELECT * FROM '${LOCATIONS_URL}'`
       );
 
       setStatus((stage) => `${stage}\nData loaded`);
