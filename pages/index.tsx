@@ -7,33 +7,19 @@ const JSDELIVR_BUNDLES = duckdb.getJsDelivrBundles();
 
 const N = 500;
 const QUERY = `
-SELECT
-    GREATEST(tin.total_in, tout.total_out) AS total_max
-FROM 
-    locations l 
+SELECT GREATEST(tin.total_in, tout.total_out) AS total_max FROM locations l 
+
 LEFT JOIN (
-  SELECT
-      origin,
-      SUM(CASE WHEN origin <> dest THEN count ELSE 0 END) AS total_out,
-      SUM(CASE WHEN origin = dest THEN count ELSE 0 END) AS total_int
-  FROM
-      flows f
-  GROUP BY
-      origin
+  SELECT origin, SUM(CASE WHEN origin <> dest THEN count ELSE 0 END) AS total_out
+  FROM flows f GROUP BY origin
 ) tout ON l.id = tout.origin
 
 LEFT JOIN (
-  SELECT
-      dest,
-      SUM(CASE WHEN origin <> dest THEN count ELSE 0 END) AS total_in
-  FROM
-      flows f
-  GROUP BY
-      dest
+  SELECT dest, SUM(CASE WHEN origin <> dest THEN count ELSE 0 END) AS total_in
+  FROM flows f GROUP BY dest
 ) tin ON l.id = tin.dest
 
-WHERE
-    l.lat BETWEEN 40.22 AND 42.03 AND l.lon BETWEEN 14.97 AND 17.39
+WHERE l.lat BETWEEN 40.22 AND 42.03 AND l.lon BETWEEN 14.97 AND 17.39
 ORDER BY total_max ASC
 `;
 
