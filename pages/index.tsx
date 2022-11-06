@@ -62,9 +62,9 @@ const Home: NextPage = () => {
       const LOCATIONS_URL = `${ROOT_URL}/data/locations.parquet`;
 
       setStatus("Loading…");
+
       // Select a bundle based on browser checks
       const bundle = await duckdb.selectBundle(JSDELIVR_BUNDLES);
-
       const worker_url = URL.createObjectURL(
         new Blob([`importScripts("${bundle.mainWorker!}");`], {
           type: "text/javascript",
@@ -78,12 +78,12 @@ const Home: NextPage = () => {
       await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
       URL.revokeObjectURL(worker_url);
 
-      await db.open({
-        path: ":memory:",
-        query: {
-          castBigIntToDouble: true,
-        },
-      });
+      // await db.open({
+      //   path: ":memory:",
+      //   query: {
+      //     castBigIntToDouble: true,
+      //   },
+      // });
       const conn = await db.connect();
 
       await conn.query(`CREATE TABLE flows AS SELECT * FROM '${FLOWS_URL}'`);
@@ -91,15 +91,15 @@ const Home: NextPage = () => {
         `CREATE TABLE locations AS SELECT * FROM '${LOCATIONS_URL}'`
       );
 
-      setStatus((stage) => `${stage}\nData loaded`);
+      setStatus("");
 
       try {
         for (let i = 0; i < N; i++) {
           await conn.query(QUERY);
-          setStatus((stage) => `${stage}, ${i + 1}`);
+          setStatus((prev) => `${prev} ${i + 1}`);
         }
       } catch (err) {
-        setStatus((stage) => `${stage}, ERROR!!!\n${err}`);
+        setStatus((prev) => `${prev} ERROR!!!\n${err}`);
       }
     })();
   }, []);
