@@ -24,8 +24,6 @@ ORDER BY total_max ASC
 `;
 
 const Home: NextPage = () => {
-  // const { conn, db } = useDuckConn();
-
   const [status, setStatus] = useState<string>("");
   useEffect(() => {
     (async () => {
@@ -52,12 +50,6 @@ const Home: NextPage = () => {
       await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
       URL.revokeObjectURL(worker_url);
 
-      // await db.open({
-      //   path: ":memory:",
-      //   query: {
-      //     castBigIntToDouble: true,
-      //   },
-      // });
       const conn = await db.connect();
 
       await conn.query(`CREATE TABLE flows AS SELECT * FROM '${FLOWS_URL}'`);
