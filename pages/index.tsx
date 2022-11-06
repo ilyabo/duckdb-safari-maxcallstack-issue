@@ -5,8 +5,7 @@ import * as duckdb from "@duckdb/duckdb-wasm";
 
 const JSDELIVR_BUNDLES = duckdb.getJsDelivrBundles();
 
-const N = 100;
-const PARALLELISM = 10;
+const N = 500;
 const QUERY = `
 SELECT
     l.id,
@@ -94,24 +93,18 @@ const Home: NextPage = () => {
 
       setStatus((stage) => `${stage}\nData loaded`);
 
-      for (let i = 0; i < N; i++) {
-        await Promise.all(
-          range(PARALLELISM).map((i) => {
-            return conn.query(QUERY);
-          })
-        );
-        setStatus((stage) => `${stage}\nBatch ${i + 1} completed`);
+      try {
+        for (let i = 0; i < N; i++) {
+          await conn.query(QUERY);
+          setStatus((stage) => `${stage}, ${i + 1}`);
+        }
+      } catch (err) {
+        setStatus((stage) => `${stage}, ERROR!!!\n${err}`);
       }
     })();
   }, []);
 
-  return <pre>{status}</pre>;
+  return <div style={{ fontFamily: "sans-serif" }}>{status}</div>;
 };
-
-function range(n: number) {
-  const rv = [];
-  for (let i = 0; i < n; i++) rv.push(i);
-  return rv;
-}
 
 export default Home;
