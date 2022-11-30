@@ -5,23 +5,50 @@ import * as duckdb from "@duckdb/duckdb-wasm";
 
 const JSDELIVR_BUNDLES = duckdb.getJsDelivrBundles();
 
-const N = 1000;
-const QUERY = `
-SELECT GREATEST(tin.total_in, tout.total_out) AS total_max FROM locations l 
+const N = 10000;
 
+const QUERY = `
+  SELECT
+    l.id,
+    l.name,
+    l.lat,
+    l.lon,
+    tin.total_in,
+    tout.total_out,
+    tout.total_int,
+    GREATEST(tin.total_in, tout.total_out) AS total_max
+FROM 
+    locations l 
 LEFT JOIN (
-  SELECT origin, SUM(count) AS total_out FROM flows f 
-  WHERE origin <> dest GROUP BY origin
+  SELECT
+      origin,
+      SUM(CASE WHEN origin <> dest THEN count ELSE 0 END) AS total_out,
+      SUM(CASE WHEN origin = dest THEN count ELSE 0 END) AS total_int
+  FROM
+      flows f
+  WHERE 
+    (TRUE AND (origin IN ('72006') OR dest IN ('72006')) AND TRUE)
+  GROUP BY
+      origin
 ) tout ON l.id = tout.origin
 
 LEFT JOIN (
-  SELECT dest, SUM(count) AS total_in FROM flows f 
-  WHERE origin <> dest GROUP BY dest
+  SELECT
+      dest,
+      SUM(CASE WHEN origin <> dest THEN count ELSE 0 END) AS total_in
+  FROM
+      flows f
+  WHERE 
+    (TRUE AND (origin IN ('72006') OR dest IN ('72006')) AND TRUE)
+  GROUP BY
+      dest
 ) tin ON l.id = tin.dest
 
-WHERE l.lat BETWEEN 40.22 AND 42.03 AND l.lon BETWEEN 14.97 AND 17.39
+WHERE
+    l.lat BETWEEN 40.22971369851149 AND 42.03780879324967
+    AND l.lon BETWEEN 14.978306190131324 AND 17.392598457924283
 ORDER BY total_max ASC
-`;
+  `;
 
 const Home: NextPage = () => {
   const [status, setStatus] = useState<string>("");
@@ -59,13 +86,25 @@ const Home: NextPage = () => {
 
       setStatus("");
 
-      try {
-        for (let i = 0; i < N; i++) {
+      for (let i = 0; i < N; i++) {
+        try {
           await conn.query(QUERY);
-          setStatus((prev) => `${prev} ${i + 1}`);
+        } catch (err) {
+          setStatus((prev) => `${prev} ERROR!!!\n${err}`);
+          if (`${err}`.includes("Maximum call stack size exceeded")) {
+            setStatus((prev) => `${prev} Retrying in hope of recovery… `);
+            for (let j = 0; j < 1000; j++) {
+              try {
+                await conn.query(QUERY);
+                setStatus(
+                  (prev) => `${prev} Recovered after ${j + 1} retries!`
+                );
+                break;
+              } catch (err) {}
+            }
+          }
         }
-      } catch (err) {
-        setStatus((prev) => `${prev} ERROR!!!\n${err}`);
+        setStatus((prev) => `${prev} ${i + 1}`);
       }
     })();
   }, []);
